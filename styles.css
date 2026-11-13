@@ -1,0 +1,279 @@
+/* Mi Salud: colores de Asturias. Prado, mar Cantábrico y manzana de sidra.
+   Letra grande y mucho contraste, pensada para leer con un solo ojo. */
+:root {
+  --prado: #1E4636;
+  --hoja: #2F6B4C;
+  --mar: #1F5675;
+  --mar-claro: #D6E6EF;
+  --sidra: #E3A72F;
+  --manzana: #A8352A;
+  --niebla: #EDF1EC;
+  --papel: #FFFFFF;
+  --tinta: #16201B;
+  --tinta-suave: #4A5A51;
+  --borde: #C9D4CC;
+  --sombra: 0 1px 0 rgba(22, 32, 27, 0.08);
+  --radio: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --prado: #8FCBA8;
+    --hoja: #A9D9BC;
+    --mar: #8CC4E3;
+    --mar-claro: #1C3341;
+    --sidra: #F0BF55;
+    --manzana: #F08A7E;
+    --niebla: #0E1813;
+    --papel: #17241D;
+    --tinta: #EAF1EC;
+    --tinta-suave: #A9B8AF;
+    --borde: #2C3D33;
+    --sombra: none;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; font-size: 19px; }
+body {
+  margin: 0;
+  background: var(--niebla);
+  color: var(--tinta);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.45;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+}
+h1, h2, h3 { line-height: 1.15; margin: 0; }
+h2 { font-size: 1.25rem; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--sidra); outline-offset: 2px; }
+
+/* Cabecera: el prado, las colinas y el mar Cantábrico */
+.cabecera {
+  background-color: var(--prado);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpath d='M0 38 C60 10 110 14 170 30 S290 8 400 26 V60 H0Z' fill='%232F6B4C'/%3E%3Cpath d='M0 48 C70 30 140 40 210 46 S330 34 400 42 V60 H0Z' fill='%233E8A5F'/%3E%3Cpath d='M0 54 C40 50 80 58 120 54 S200 50 240 54 S320 58 400 52 V60 H0Z' fill='%231F5675'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: 100% 64px;
+  color: #fff;
+  padding: calc(18px + env(safe-area-inset-top)) 20px 64px;
+  position: relative;
+}
+.cabecera::after {
+  content: "";
+  position: absolute; right: 22px; top: calc(20px + env(safe-area-inset-top));
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--sidra);
+  box-shadow: 0 0 0 8px rgba(227, 167, 47, 0.18);
+}
+@media (prefers-color-scheme: dark) { .cabecera { background-color: #12291F; } }
+.cabecera h1 { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.01em; }
+.fecha { opacity: 0.85; font-size: 1rem; }
+.saludo { font-size: 1.1rem; font-weight: 600; margin-top: 2px; color: #F6E3B4; }
+
+/* Título de cada bloque con su dibujo */
+.titulo-bloque { display: flex; align-items: center; gap: 12px; }
+.icono {
+  flex: none; width: 44px; height: 44px; border-radius: 13px;
+  display: grid; place-items: center; font-size: 1.4rem;
+  background: var(--tono, var(--niebla));
+}
+.tono-sidra { --tono: #FBEBC4; }
+.tono-prado { --tono: #DCEBE1; }
+.tono-mar { --tono: var(--mar-claro); }
+.tono-manzana { --tono: #F7DCD7; }
+@media (prefers-color-scheme: dark) {
+  .tono-sidra { --tono: #3A2E10; }
+  .tono-prado { --tono: #1F3A2C; }
+  .tono-manzana { --tono: #3D1F1B; }
+}
+.bloque.franja-sidra { border-top: 5px solid var(--sidra); }
+.bloque.franja-mar { border-top: 5px solid var(--mar); }
+.bloque.franja-prado { border-top: 5px solid var(--hoja); }
+
+main { padding: 16px; max-width: 640px; margin: 0 auto; display: grid; gap: 16px; }
+main:focus { outline: none; }
+
+/* Bloques */
+.bloque {
+  background: var(--papel);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+  box-shadow: var(--sombra);
+}
+.fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.suave { color: var(--tinta-suave); font-size: 0.95rem; }
+
+/* Calorías: la barra del día */
+.frase-grande { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+.frase-grande.pasado { color: var(--manzana); }
+.barra { height: 22px; border-radius: 11px; background: var(--niebla); border: 1px solid var(--borde); overflow: hidden; }
+.barra > span { display: block; height: 100%; background: linear-gradient(90deg, var(--hoja), #5FA77B); border-radius: 11px; transition: width 0.3s; }
+.barra.pasado > span { background: var(--manzana); }
+.cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.cifras b { display: block; font-size: 1.3rem; }
+.cifras span { font-size: 0.85rem; color: var(--tinta-suave); }
+
+/* Agua: los vasos */
+.vasos { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px; }
+.vaso {
+  height: 56px;
+  border: 2px solid var(--mar);
+  border-top-width: 1px;
+  border-radius: 4px 4px 12px 12px;
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+}
+.vaso::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 0;
+  background: var(--mar);
+  transition: height 0.25s ease-out;
+}
+.vaso[aria-pressed="true"]::after { height: 80%; }
+@media (prefers-reduced-motion: reduce) { .vaso::after, .barra > span { transition: none; } }
+
+/* Listas */
+.lista { list-style: none; margin: 0; padding: 0; display: grid; }
+.lista li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--borde); }
+.lista li:first-child { border-top: 0; }
+.lista .texto { flex: 1; min-width: 0; }
+.lista .kcal { font-weight: 700; white-space: nowrap; }
+
+/* Botones */
+.boton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 52px; padding: 0 20px;
+  border-radius: 12px; border: 0;
+  background: var(--prado); color: #fff;
+  font-weight: 700; cursor: pointer;
+  text-decoration: none;
+}
+@media (prefers-color-scheme: dark) { .boton { color: #0E1813; } }
+.boton.ancho { width: 100%; }
+.boton.claro { background: transparent; color: var(--prado); border: 2px solid var(--prado); }
+.boton.mar { background: var(--mar); }
+.quitar {
+  min-width: 44px; min-height: 44px; border-radius: 10px;
+  border: 1px solid var(--borde); background: transparent; color: var(--manzana);
+  font-size: 1.2rem; cursor: pointer;
+}
+
+/* Formularios */
+label { display: grid; gap: 6px; font-weight: 600; }
+input, select {
+  min-height: 52px; width: 100%;
+  border: 2px solid var(--borde); border-radius: 12px;
+  background: var(--papel); padding: 0 14px;
+  font-size: 1.1rem;
+}
+input:focus { border-color: var(--prado); outline: none; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+
+/* Recetas */
+.receta {
+  text-align: left; width: 100%; cursor: pointer; font: inherit; color: inherit;
+  grid-template-columns: 72px 1fr; align-items: center; column-gap: 16px;
+}
+.receta .plato {
+  grid-row: span 3; width: 72px; height: 72px; border-radius: 20px;
+  display: grid; place-items: center; font-size: 2.4rem;
+  background: var(--tono, var(--niebla));
+}
+.receta > :not(.plato) { grid-column: 2; }
+.receta:active { transform: scale(0.99); }
+.receta .tipo { color: var(--hoja); font-weight: 600; font-size: 0.9rem; }
+.datos { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--tinta-suave); font-size: 0.95rem; }
+.filtros { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.filtro {
+  min-height: 44px; padding: 0 16px; border-radius: 22px; white-space: nowrap;
+  border: 2px solid var(--borde); background: var(--papel); cursor: pointer; font-weight: 600;
+}
+.filtro[aria-pressed="true"] { border-color: var(--prado); background: var(--prado); color: #fff; }
+@media (prefers-color-scheme: dark) { .filtro[aria-pressed="true"] { color: #0E1813; } }
+ol.pasos { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; }
+ul.ingredientes { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.nota { background: var(--mar-claro); border-radius: 10px; padding: 12px 14px; }
+
+/* Ejercicios */
+.reglas { border: 2px solid var(--manzana); background: linear-gradient(var(--papel), var(--papel)) padding-box; }
+.reglas li::marker { color: var(--manzana); }
+.reglas ul { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; }
+.ejercicio { border-top: 1px solid var(--borde); padding-top: 14px; display: grid; gap: 8px; }
+.ejercicio:first-of-type { border-top: 0; padding-top: 0; }
+.permiso { color: var(--manzana); font-weight: 600; font-size: 0.95rem; }
+.series { font-weight: 700; color: var(--hoja); }
+.sube { background: #FBEBC4; color: #3B2C05; border-radius: 10px; padding: 10px 12px; font-size: 0.95rem; }
+@media (prefers-color-scheme: dark) { .sube { background: #3A2E10; color: #F7E7BE; } }
+.hecho {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 48px; font-weight: 600; cursor: pointer;
+}
+.hecho input { width: 28px; height: 28px; min-height: 0; accent-color: var(--hoja); }
+
+/* Progreso: la gráfica */
+.grafica { width: 100%; height: auto; }
+.grafica .linea { fill: none; stroke: var(--hoja); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.grafica .meta { stroke: var(--sidra); stroke-width: 2; stroke-dasharray: 6 6; }
+.grafica .punto { fill: var(--hoja); }
+.grafica text { fill: var(--tinta-suave); font-size: 12px; }
+
+/* Barra de pestañas, como en el iPhone */
+.pestanas {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--papel); border-top: 1px solid var(--borde);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+.pestanas button {
+  min-height: 68px; border: 0; background: transparent; cursor: pointer;
+  display: grid; justify-items: center; align-content: center; gap: 2px;
+  font-size: 0.8rem; font-weight: 600; color: var(--tinta-suave);
+}
+.pestanas button span { font-size: 1.5rem; line-height: 1; }
+.pestanas button[aria-current="page"] { color: var(--prado); }
+
+/* Ventana para añadir comida */
+dialog {
+  border: 0; border-radius: 18px 18px 0 0; padding: 0;
+  width: 100%; max-width: 640px; max-height: 88vh;
+  margin: auto auto 0; background: var(--papel); color: var(--tinta);
+}
+dialog::backdrop { background: rgba(10, 20, 15, 0.55); }
+.dialogo-dentro { padding: 20px; display: grid; gap: 14px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+.opciones { max-height: 40vh; overflow-y: auto; border: 1px solid var(--borde); border-radius: 12px; }
+.opcion {
+  width: 100%; text-align: left; border: 0; border-top: 1px solid var(--borde);
+  background: transparent; padding: 12px 14px; min-height: 52px; cursor: pointer;
+  display: flex; justify-content: space-between; gap: 12px;
+}
+.opcion:first-child { border-top: 0; }
+.aviso { background: #FFF4D6; color: #3B2C05; border-radius: 12px; padding: 14px; }
+@media (prefers-color-scheme: dark) { .aviso { background: #3A2E10; color: #F7E7BE; } }
+.oculto { display: none !important; }
+
+/* Dibujos de los ejercicios */
+.dibujo {
+  width: 100%; max-width: 260px; height: auto; justify-self: center;
+  background: var(--niebla); border-radius: 14px; padding: 6px;
+}
+.dibujo .cuerpo { stroke: var(--prado); stroke-width: 4; stroke-linecap: round; fill: none; }
+.dibujo circle.cuerpo { fill: var(--papel); }
+.dibujo .mueble { stroke: var(--tinta-suave); stroke-width: 2; fill: none; opacity: 0.7; }
+.dibujo .suelo { stroke: var(--borde); stroke-width: 2; }
+.dibujo .pesa { fill: var(--mar); }
+.dibujo .flecha { stroke: var(--sidra); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.dibujo .raya { stroke: var(--sidra); stroke-width: 3; stroke-dasharray: 6 5; }
