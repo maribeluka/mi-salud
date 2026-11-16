@@ -363,7 +363,7 @@ function abrirAnadirComida() {
         el('p', { class: 'grupo-alimento suave' }, 'Escribe el nombre arriba, o elige uno:'),
         ...ALIMENTOS.map(a => el('button', { class: 'opcion', type: 'button', onclick: () => {
           buscar.value = a.n; pintarOpciones(); opciones.scrollTop = 0;
-        } }, el('span', {}, a.n), el('span', { class: 'suave' }, '›'))));
+        } }, el('span', {}, a.n), el('span', { class: 'valores' }, el('b', {}, `${a.k} kcal`), el('span', {}, `por 100 g${a.seco ? ' en seco' : ''}`)))));
       return;
     }
     const g = gramos.value === '' ? null : num(gramos.value, 1, 2000);
@@ -372,7 +372,9 @@ function abrirAnadirComida() {
     for (const a of ALIMENTOS.filter(a => sinTildes(`${a.n} ${a.o || ''}`).includes(q)).slice(0, 8)) {
       const peso = g ?? a.r;
       const cuanto = a.u && g === null ? a.u : `${formato(peso)} g ${a.seco ? 'en seco' : 'en crudo'}`;
-      hijos.push(el('p', { class: 'grupo-alimento' }, el('b', {}, a.n), ` · ${cuanto}`));
+      hijos.push(el('p', { class: 'grupo-alimento' }, el('b', {}, a.n), ` · ${cuanto}`,
+        el('span', { class: 'por-cien' }, `Por 100 g ${a.seco ? 'en seco' : 'en crudo'}: ${a.k} kcal y ${a.p} g de proteína.`,
+          a.seco && ` Ya cocido, unas ${Math.round(a.k / 2.6 / 5) * 5} kcal por 100 g.`)));
       for (const c of COCINADOS[a.g]) {
         hijos.push(boton({ ...calcular(a, c, peso), ver: c.f.charAt(0).toUpperCase() + c.f.slice(1), n: `${a.n} ${c.f} (${cuanto})` }));
       }
@@ -436,6 +438,9 @@ function pantallaRecetas() {
     } }, t)));
   const lista = RECETAS.filter(r => filtroRecetas === 'Todas' || r.tipo.includes(filtroRecetas));
   return [
+    el('section', { class: 'bloque aviso' },
+      el('p', {}, 'Las recetas son solo ideas. ¿Has comido otra cosa? Apúntala aquí.'),
+      el('button', { class: 'boton ancho', type: 'button', onclick: () => { ir('hoy'); abrirAnadirComida(); } }, '+ Apuntar otra comida')),
     filtros,
     ...lista.map(r => el('button', { class: 'bloque receta', type: 'button', onclick: () => abrirReceta(r) },
       el('span', { class: `plato tono-${tonoReceta(r)}`, 'aria-hidden': 'true' }, r.emoji),
