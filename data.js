@@ -371,3 +371,17 @@ const REGLAS_BAILE = [
   'Si una vuelta te marea, no la hagas: sigue de frente.',
   'Los vídeos están en inglés, pero basta con mirar y copiar los pasos.',
 ];
+
+// Calorías gastadas (aproximadas): intensidad (MET) x peso en kg x horas.
+// Cada ejercicio cuenta como 5 minutos; cada baile, lo que dura su vídeo.
+const MIN_EJERCICIO = 5;
+const INTENSIDAD = {
+  'Calentamiento': 3.5,
+  'Piernas con fuerza': 3.5,
+  'Espalda fuerte': 3,
+  'Brazos y pecho': 3,
+  'Equilibrio': 2.5,
+  baile: 4.5,
+  caminata: 4,
+};
+const KCAL_POR_PASO_Y_KG = 0.0005; // caminar: unas 37 kcal cada 1.000 pasos con 75 kg

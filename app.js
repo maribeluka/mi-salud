@@ -240,7 +240,48 @@ function pantallaHoy() {
     el('button', { class: 'boton claro ancho', type: 'submit' }, 'Guardar pasos'),
   );
 
-  return [calorias, comidas, agua, formReloj, bloqueTension(d)];
+  return [calorias, comidas, agua, formReloj, bloqueTension(d), bloqueBalance(d)];
+}
+
+// ---------- Calorías gastadas ----------
+function kcalGasto(met, minutos) {
+  const peso = ultimoPeso() ?? datos.perfil.peso;
+  return Math.round(met * peso * minutos / 60);
+}
+function kcalBaile(v) {
+  return kcalGasto(/Caminata/.test(v.estilo) ? INTENSIDAD.caminata : INTENSIDAD.baile, v.min);
+}
+// Suma lo marcado como «Hecho hoy» y lo que se gasta caminando los pasos apuntados.
+function gastoDelDia(d) {
+  let ejercicios = 0, bailes = 0, minutos = 0;
+  for (const g of EJERCICIOS) for (const x of g.lista) {
+    if (d.hechos.includes(`${g.grupo}-${x.n}`)) { ejercicios += kcalGasto(INTENSIDAD[g.grupo] || 3, MIN_EJERCICIO); minutos += MIN_EJERCICIO; }
+  }
+  for (const v of BAILES) {
+    if (d.hechos.includes(`Baile-${v.id}`)) { bailes += kcalBaile(v); minutos += v.min; }
+  }
+  const peso = ultimoPeso() ?? datos.perfil.peso;
+  const pasos = Math.round((d.pasos ?? 0) * peso * KCAL_POR_PASO_Y_KG);
+  return { ejercicios, bailes, pasos, minutos, total: ejercicios + bailes + pasos };
+}
+function bloqueBalance(d) {
+  const comido = d.comidas.reduce((s, c) => s + c.k, 0);
+  const g = gastoDelDia(d);
+  return el('section', { class: 'bloque franja-mar balance', 'aria-labelledby': 't-balance' },
+    cabeza('⚖️', 'Resumen del día', 't-balance', 'mar'),
+    el('div', { class: 'cifras dos-cifras' },
+      el('p', {}, el('b', {}, formato(comido)), el('span', {}, 'kcal comidas')),
+      el('p', {}, el('b', {}, formato(g.total)), el('span', {}, 'kcal gastadas con ejercicio')),
+    ),
+    el('ul', { class: 'lista' },
+      el('li', {}, el('span', { class: 'texto' }, 'Ejercicios hechos'), el('b', {}, `${formato(g.ejercicios)} kcal`)),
+      el('li', {}, el('span', { class: 'texto' }, 'Baile'), el('b', {}, `${formato(g.bailes)} kcal`)),
+      el('li', {}, el('span', { class: 'texto' }, d.pasos === null ? 'Pasos (sin apuntar)' : `Caminar ${formato(d.pasos)} pasos`), el('b', {}, `${formato(g.pasos)} kcal`)),
+      d.kcalReloj !== null && el('li', {}, el('span', { class: 'texto' }, 'Lo que dice tu reloj'), el('b', {}, `${formato(d.kcalReloj)} kcal`)),
+    ),
+    el('p', {}, `Hoy llevas ${g.minutos} minutos de ejercicio y baile.`),
+    el('p', { class: 'suave' }, 'Son cuentas aproximadas, según tu peso. Marca «Hecho hoy» en Ejercicios para que sumen. No comas de más por lo gastado: tu objetivo de calorías ya cuenta con que te mueves.'),
+  );
 }
 
 // ---------- Tensión y pulso ----------
@@ -448,20 +489,26 @@ function pantallaEjercicios() {
       const caja = el('input', { type: 'checkbox', checked: d.hechos.includes(id), onchange: () => {
         const i = d.hechos.indexOf(id);
         if (i >= 0) d.hechos.splice(i, 1); else d.hechos.push(id);
-        guardar();
+        guardar(); refrescarBalance();
       } });
       return el('div', { class: 'ejercicio' },
         el('h3', {}, x.n),
         dibujo(x.n),
         el('p', {}, x.c),
         el('p', { class: 'series' }, x.s),
+        el('p', { class: 'datos' }, el('span', {}, `⏱️ ${MIN_EJERCICIO} minutos`), el('span', {}, `🔥 unas ${kcalGasto(INTENSIDAD[g.grupo] || 3, MIN_EJERCICIO)} kcal`)),
         x.sube && el('p', { class: 'sube' }, el('b', {}, '📈 Cuando te resulte fácil: '), x.sube),
         x.ok && el('p', { class: 'permiso' }, '⚠️ ', x.ok),
         el('label', { class: 'hecho' }, caja, 'Hecho hoy'),
       );
     }),
   ));
-  return [reglas, bloqueBaile(d), ...grupos];
+  return [reglas, bloqueBaile(d), ...grupos, bloqueBalance(d)];
+}
+// Al marcar «Hecho hoy», actualiza el resumen sin mover la pantalla.
+function refrescarBalance() {
+  const viejo = vista.querySelector('.balance');
+  if (viejo) viejo.replaceWith(bloqueBalance(dia()));
 }
 
 // Vídeos de baile: se abren en YouTube (hace falta internet).
@@ -475,11 +522,11 @@ function bloqueBaile(d) {
       const caja = el('input', { type: 'checkbox', checked: d.hechos.includes(id), onchange: () => {
         const i = d.hechos.indexOf(id);
         if (i >= 0) d.hechos.splice(i, 1); else d.hechos.push(id);
-        guardar();
+        guardar(); refrescarBalance();
       } });
       return el('div', { class: 'ejercicio' },
         el('h3', {}, v.n),
-        el('p', { class: 'datos' }, el('span', {}, `💃 ${v.estilo}`), el('span', {}, `🎵 ${v.musica}`), el('span', {}, `⏱️ ${v.min} min`)),
+        el('p', { class: 'datos' }, el('span', {}, `💃 ${v.estilo}`), el('span', {}, `🎵 ${v.musica}`), el('span', {}, `⏱️ ${v.min} min`), el('span', {}, `🔥 unas ${kcalBaile(v)} kcal`)),
         v.nota && el('p', { class: 'suave' }, v.nota),
         el('a', { class: 'boton mar ancho', href: `https://www.youtube.com/watch?v=${v.id}`, target: '_blank', rel: 'noopener noreferrer' }, '▶ Ver el vídeo'),
         el('p', { class: 'suave' }, `Canal: ${v.canal}`),
