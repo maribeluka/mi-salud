@@ -1,5 +1,5 @@
 // Guarda la app en el teléfono para que funcione sin internet.
-const CACHE = 'mi-salud-v5';
+const CACHE = 'mi-salud-v6';
 const ARCHIVOS = ['./', 'index.html', 'styles.css', 'app.js', 'data.js', 'dibujos.js', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

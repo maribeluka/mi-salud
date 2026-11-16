@@ -261,6 +261,15 @@ dialog::backdrop { background: rgba(10, 20, 15, 0.55); }
   display: flex; justify-content: space-between; gap: 12px;
 }
 .opcion:first-child { border-top: 0; }
+.opcion .valores { display: grid; justify-items: end; white-space: nowrap; font-size: 0.9rem; color: var(--tinta-suave); }
+.opcion .valores b { font-size: 1rem; color: var(--tinta); }
+.grupo-alimento { padding: 10px 14px; background: var(--niebla); border-top: 1px solid var(--borde); }
+.grupo-alimento:first-child { border-top: 0; }
+.lista .kcal small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--tinta-suave); text-align: right; }
+.tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-items: end; }
+.bloque.franja-manzana { border-top: 5px solid var(--manzana); }
+.reglas-baile { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: 0.95rem; }
+.reglas-baile + .ejercicio { border-top: 1px solid var(--borde); padding-top: 14px; }
 .aviso { background: #FFF4D6; color: #3B2C05; border-radius: 12px; padding: 14px; }
 @media (prefers-color-scheme: dark) { .aviso { background: #3A2E10; color: #F7E7BE; } }
 .oculto { display: none !important; }

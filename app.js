@@ -191,7 +191,7 @@ function pantallaHoy() {
       ? el('li', {}, el('span', { class: 'suave' }, 'Todavía no has apuntado nada hoy.'))
       : d.comidas.map((c, i) => el('li', {},
           el('span', { class: 'texto' }, c.n),
-          el('span', { class: 'kcal' }, `${formato(c.k)} kcal`),
+          el('span', { class: 'kcal' }, `${formato(c.k)} kcal`, el('small', {}, `${formato(c.p)} g prot.`)),
           el('button', { class: 'quitar', type: 'button', 'aria-label': `Quitar ${c.n}`, onclick: () => {
             d.comidas.splice(i, 1); guardar(); pintar();
           } }, '✕'),
@@ -240,23 +240,112 @@ function pantallaHoy() {
     el('button', { class: 'boton claro ancho', type: 'submit' }, 'Guardar pasos'),
   );
 
-  return [calorias, comidas, agua, formReloj];
+  return [calorias, comidas, agua, formReloj, bloqueTension(d)];
+}
+
+// ---------- Tensión y pulso ----------
+// La app no puede leer aparatos: se copian aquí los números del tensiómetro o del reloj.
+function valorarTension(a, b) {
+  if (a >= 180 || b >= 110) return { t: 'Muy alta. Siéntate, espera 5 minutos y repite. Si sigue así, llama hoy a tu médico; si además te duele el pecho, te cuesta respirar o ves mal, llama al 112.', mal: true };
+  if (a >= 135 || b >= 85) return { t: 'Algo alta para medirla en casa. Repítela tras 5 minutos sentada. Si te sale así varios días, enséñaselo a tu médico.', mal: true };
+  if (a < 90 || b < 60) return { t: 'Baja. Si notas mareo, siéntate y bebe agua. Coméntaselo a tu médico si se repite.', mal: true };
+  return { t: 'Dentro de lo normal.', mal: false };
+}
+function bloqueTension(d) {
+  const lista = d.tension || [];
+  const error = el('p', { class: 'permiso', role: 'alert' });
+  const form = el('form', { class: 'bloque franja-manzana', 'aria-labelledby': 't-tension', onsubmit: e => {
+    e.preventDefault();
+    const f = new FormData(form);
+    const a = f.get('alta') === '' ? null : num(f.get('alta'), 60, 260);
+    const b = f.get('baja') === '' ? null : num(f.get('baja'), 30, 160);
+    const pul = f.get('pulso') === '' ? null : num(f.get('pulso'), 30, 220);
+    const hayTension = f.get('alta') !== '' || f.get('baja') !== '';
+    if ((hayTension && (a === null || b === null || b >= a)) || (f.get('pulso') !== '' && pul === null) || (!hayTension && pul === null)) {
+      error.textContent = 'Revisa los números. Ejemplo: alta 125, baja 78, pulso 70. Puedes apuntar solo el pulso.';
+      return;
+    }
+    const ahora = new Date();
+    d.tension = [...lista, {
+      h: `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`,
+      a: a === null ? null : Math.round(a), b: b === null ? null : Math.round(b), pul: pul === null ? null : Math.round(pul),
+    }].slice(-20);
+    guardar(); pintar();
+  } });
+  const ultima = [...lista].reverse().find(x => x.a !== null);
+  const valor = ultima && valorarTension(ultima.a, ultima.b);
+  form.append(
+    cabeza('❤️', 'Tensión y pulso', 't-tension', 'manzana'),
+    lista.length > 0 && el('ul', { class: 'lista' }, lista.map((x, i) => el('li', {},
+      el('span', { class: 'suave' }, x.h),
+      el('span', { class: 'texto' }, [x.a !== null && `${x.a}/${x.b}`, x.pul !== null && `${x.pul} latidos`].filter(Boolean).join(' · ')),
+      el('button', { class: 'quitar', type: 'button', 'aria-label': `Quitar la medida de las ${x.h}`, onclick: () => {
+        d.tension = lista.filter((_, j) => j !== i); guardar(); pintar();
+      } }, '✕')))),
+    valor && el('p', { class: valor.mal ? 'permiso' : 'series' }, valor.t),
+    el('div', { class: 'tres' },
+      el('label', {}, 'Alta', el('input', { name: 'alta', inputmode: 'numeric', placeholder: '125' })),
+      el('label', {}, 'Baja', el('input', { name: 'baja', inputmode: 'numeric', placeholder: '78' })),
+      el('label', {}, 'Pulso', el('input', { name: 'pulso', inputmode: 'numeric', placeholder: '70' })),
+    ),
+    error,
+    el('button', { class: 'boton claro ancho', type: 'submit' }, 'Apuntar medida'),
+    el('p', { class: 'suave' }, 'Mídela sentada, tras 5 minutos de reposo, con un tensiómetro de brazo. Copia aquí los números. Esto no sustituye a tu médico.'),
+  );
+  return form;
+}
+
+function sinTildes(t) {
+  return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+// Calorías y proteína de un alimento según cómo se cocina y cuántos gramos (en crudo).
+function calcular(a, c, peso) {
+  const parte = peso / a.r; // el aceite o el rebozado crecen con la ración
+  return {
+    k: Math.round((a.k * peso / 100 + c.k * parte) / 5) * 5,
+    p: Math.round(a.p * peso / 100 + (c.p || 0) * parte),
+  };
 }
 
 function abrirAnadirComida() {
-  const buscar = el('input', { type: 'search', placeholder: 'Buscar: merluza, yogur…', 'aria-label': 'Buscar alimento' });
+  const buscar = el('input', { type: 'search', placeholder: 'Escribe: merluza, pollo, yogur…', 'aria-label': 'Nombre del alimento', autocomplete: 'off' });
+  const gramos = el('input', { inputmode: 'numeric', placeholder: 'ración normal', 'aria-label': 'Gramos, si los sabes' });
   const opciones = el('div', { class: 'opciones' });
+  const boton = a => el('button', { class: 'opcion', type: 'button', onclick: () => anadir(a) },
+    el('span', {}, a.ver || a.n),
+    el('span', { class: 'valores' }, el('b', {}, `${a.k} kcal`), el('span', {}, `${a.p} g prot.`)));
   const pintarOpciones = () => {
-    const q = buscar.value.trim().toLowerCase();
-    const todos = [
-      ...ALIMENTOS,
+    const q = sinTildes(buscar.value.trim());
+    if (!q) {
+      // Sin nada escrito: la lista de nombres, para elegir con el dedo.
+      opciones.replaceChildren(
+        el('p', { class: 'grupo-alimento suave' }, 'Escribe el nombre arriba, o elige uno:'),
+        ...ALIMENTOS.map(a => el('button', { class: 'opcion', type: 'button', onclick: () => {
+          buscar.value = a.n; pintarOpciones(); opciones.scrollTop = 0;
+        } }, el('span', {}, a.n), el('span', { class: 'suave' }, '›'))));
+      return;
+    }
+    const g = gramos.value === '' ? null : num(gramos.value, 1, 2000);
+    const hijos = [];
+    // Alimentos que se cocinan: salen todas sus formas con las cuentas ya hechas.
+    for (const a of ALIMENTOS.filter(a => sinTildes(`${a.n} ${a.o || ''}`).includes(q)).slice(0, 8)) {
+      const peso = g ?? a.r;
+      const cuanto = a.u && g === null ? a.u : `${formato(peso)} g ${a.seco ? 'en seco' : 'en crudo'}`;
+      hijos.push(el('p', { class: 'grupo-alimento' }, el('b', {}, a.n), ` · ${cuanto}`));
+      for (const c of COCINADOS[a.g]) {
+        hijos.push(boton({ ...calcular(a, c, peso), ver: c.f.charAt(0).toUpperCase() + c.f.slice(1), n: `${a.n} ${c.f} (${cuanto})` }));
+      }
+    }
+    const fijos = [
+      ...ALIMENTOS_FIJOS,
       ...RECETAS.map(r => ({ n: `${r.nombre} (1 ración)`, k: r.kcal, p: r.prot })),
-    ].filter(a => a.n.toLowerCase().includes(q));
-    opciones.replaceChildren(...todos.map(a =>
-      el('button', { class: 'opcion', type: 'button', onclick: () => anadir(a) },
-        el('span', {}, a.n), el('b', {}, `${a.k} kcal`))));
+    ].filter(a => sinTildes(a.n).includes(q));
+    if (fijos.length) hijos.push(el('p', { class: 'grupo-alimento' }, el('b', {}, 'Listos para tomar')), ...fijos.map(boton));
+    if (!hijos.length) hijos.push(el('p', { class: 'grupo-alimento suave' }, 'No lo tengo en la lista. Escríbelo tú más abajo.'));
+    opciones.replaceChildren(...hijos);
   };
   buscar.addEventListener('input', pintarOpciones);
+  gramos.addEventListener('input', pintarOpciones);
 
   const nombre = el('input', { placeholder: 'Ej.: bocadillo de jamón' });
   const kcal = el('input', { inputmode: 'numeric', placeholder: 'kcal' });
@@ -264,7 +353,7 @@ function abrirAnadirComida() {
   const error = el('p', { class: 'permiso', role: 'alert' });
 
   function anadir(a) {
-    dia().comidas.push({ n: a.n, k: a.k, p: a.p || 0 });
+    dia().comidas.push({ n: a.n.slice(0, 80), k: a.k, p: a.p || 0 });
     guardar();
     dialogo.close();
     pintar();
@@ -274,7 +363,9 @@ function abrirAnadirComida() {
     el('div', { class: 'fila' },
       el('h2', {}, 'Apuntar comida'),
       el('button', { class: 'quitar', type: 'button', 'aria-label': 'Cerrar', onclick: () => dialogo.close() }, '✕')),
-    buscar,
+    el('label', {}, '¿Qué has comido?', buscar),
+    el('label', {}, 'Gramos (solo si los has pesado)', gramos),
+    el('p', { class: 'suave' }, 'Toca cómo lo has cocinado y se apuntan solas las calorías y la proteína.'),
     opciones,
     el('h3', {}, 'O escríbelo tú'),
     el('label', {}, 'Qué has comido', nombre),
@@ -370,7 +461,33 @@ function pantallaEjercicios() {
       );
     }),
   ));
-  return [reglas, ...grupos];
+  return [reglas, bloqueBaile(d), ...grupos];
+}
+
+// Vídeos de baile: se abren en YouTube (hace falta internet).
+function bloqueBaile(d) {
+  return el('section', { class: 'bloque franja-sidra', 'aria-labelledby': 't-baile' },
+    cabeza('💃', 'Baile de 15 minutos', 't-baile', 'sidra'),
+    el('p', { class: 'suave' }, 'Mueve todo el cuerpo con música. Elige uno distinto cada día. Se abre en YouTube.'),
+    el('ul', { class: 'reglas-baile' }, REGLAS_BAILE.map(r => el('li', {}, r))),
+    BAILES.map(v => {
+      const id = `Baile-${v.id}`;
+      const caja = el('input', { type: 'checkbox', checked: d.hechos.includes(id), onchange: () => {
+        const i = d.hechos.indexOf(id);
+        if (i >= 0) d.hechos.splice(i, 1); else d.hechos.push(id);
+        guardar();
+      } });
+      return el('div', { class: 'ejercicio' },
+        el('h3', {}, v.n),
+        el('p', { class: 'datos' }, el('span', {}, `💃 ${v.estilo}`), el('span', {}, `🎵 ${v.musica}`), el('span', {}, `⏱️ ${v.min} min`)),
+        v.nota && el('p', { class: 'suave' }, v.nota),
+        el('a', { class: 'boton mar ancho', href: `https://www.youtube.com/watch?v=${v.id}`, target: '_blank', rel: 'noopener noreferrer' }, '▶ Ver el vídeo'),
+        el('p', { class: 'suave' }, `Canal: ${v.canal}`),
+        el('label', { class: 'hecho' }, caja, 'Hecho hoy'),
+      );
+    }),
+    el('p', { class: 'permiso' }, '⚠️ Por el calcáneo, las vértebras y los mareos: enséñale un vídeo a tu fisio o traumatólogo antes de empezar.'),
+  );
 }
 
 // ---------- Progreso ----------
@@ -429,7 +546,20 @@ function pantallaProgreso() {
       el('input', { type: 'file', accept: 'application/json,.json', class: 'oculto', onchange: e => importar(e.target.files[0]) })),
   );
 
-  return [peso, plan, instalar, pantallaPerfil(false), copia].filter(Boolean);
+  // Tensión de los últimos días, para enseñársela al médico.
+  const medidas = Object.keys(datos.dias).sort().reverse().slice(0, 14)
+    .flatMap(f => (datos.dias[f].tension || []).map(x => ({ f, ...x }))).slice(0, 14);
+  const tension = el('section', { class: 'bloque', 'aria-labelledby': 't-tens-hist' },
+    cabeza('❤️', 'Mi tensión y mi pulso', 't-tens-hist', 'manzana'),
+    medidas.length === 0
+      ? el('p', { class: 'suave' }, 'Cuando apuntes medidas en «Hoy», aquí verás las últimas para enseñárselas a tu médico.')
+      : el('ul', { class: 'lista' }, medidas.map(x => el('li', {},
+          el('span', { class: 'suave' }, `${x.f.slice(5).split('-').reverse().join('/')} ${x.h}`),
+          el('span', { class: 'texto' }, x.a !== null ? `${x.a}/${x.b}` : '—'),
+          el('b', {}, x.pul !== null ? `${x.pul} lat.` : '')))),
+  );
+
+  return [peso, plan, tension, instalar, pantallaPerfil(false), copia].filter(Boolean);
 }
 
 function grafica() {
@@ -502,6 +632,9 @@ function limpiarCopia(d) {
       pasos: n(x.pasos, 0, 100000),
       kcalReloj: n(x.kcalReloj, 0, 10000),
       hechos: (Array.isArray(x.hechos) ? x.hechos : []).slice(0, 100).map(texto),
+      tension: (Array.isArray(x.tension) ? x.tension : []).slice(0, 20)
+        .filter(t => t && typeof t === 'object' && /^\d{2}:\d{2}$/.test(t.h))
+        .map(t => ({ h: t.h, a: n(t.a, 60, 260), b: n(t.b, 30, 160), pul: n(t.pul, 30, 220) })),
     };
   }
   const pesos = d.pesos
