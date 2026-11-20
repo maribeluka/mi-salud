@@ -240,7 +240,7 @@ function pantallaHoy() {
     el('button', { class: 'boton claro ancho', type: 'submit' }, 'Guardar pasos'),
   );
 
-  return [calorias, comidas, agua, formReloj, bloqueTension(d), bloqueBalance(d)];
+  return [calorias, bloqueHoyToca(d), comidas, agua, formReloj, bloqueTension(d), bloqueBalance(d)];
 }
 
 // ---------- Calorías gastadas ----------
@@ -431,15 +431,16 @@ function abrirAnadirComida() {
 // ---------- Recetas ----------
 let filtroRecetas = 'Todas';
 function pantallaRecetas() {
-  const tipos = ['Todas', 'Desayuno', 'Comida', 'Cena', 'Merienda', 'Postre'];
+  const tipos = ['Todas', 'Desayuno', 'Media mañana', 'Comida', 'Merienda', 'Cena'];
   const filtros = el('div', { class: 'filtros', role: 'group', 'aria-label': 'Tipo de receta' },
     tipos.map(t => el('button', { class: 'filtro', type: 'button', 'aria-pressed': String(t === filtroRecetas), onclick: () => {
       filtroRecetas = t; pintar();
     } }, t)));
   const lista = RECETAS.filter(r => filtroRecetas === 'Todas' || r.tipo.includes(filtroRecetas));
   return [
+    bloqueMenu(),
     el('section', { class: 'bloque aviso' },
-      el('p', {}, 'Las recetas son solo ideas. ¿Has comido otra cosa? Apúntala aquí.'),
+      el('p', {}, 'El menú es una guía. ¿Has comido otra cosa? Apúntala aquí.'),
       el('button', { class: 'boton ancho', type: 'button', onclick: () => { ir('hoy'); abrirAnadirComida(); } }, '+ Apuntar otra comida')),
     filtros,
     ...lista.map(r => el('button', { class: 'bloque receta', type: 'button', onclick: () => abrirReceta(r) },
@@ -452,9 +453,57 @@ function pantallaRecetas() {
     el('p', { class: 'suave' }, 'Las calorías son aproximadas.'),
   ];
 }
+// Menú de la semana, con el día de hoy marcado.
+function receta(id) {
+  return RECETAS.find(r => r.id === id);
+}
+function botonReceta(id) {
+  const r = receta(id);
+  return el('button', { class: 'plato-menu', type: 'button', onclick: () => abrirReceta(r) }, `${r.emoji} ${r.nombre}`);
+}
+function bloqueMenu() {
+  const hoy = new Date().getDay();
+  const orden = [1, 2, 3, 4, 5, 6, 0]; // de lunes a domingo
+  return el('section', { class: 'bloque franja-prado', 'aria-labelledby': 't-menu' },
+    cabeza('📅', 'Menú de la semana', 't-menu', 'prado'),
+    el('p', { class: 'suave' }, 'Todos los días: ', BASE_DIARIA.map(id => receta(id).nombre.toLowerCase()).join(', '), '. Toca un plato para ver la receta.'),
+    el('div', { class: 'menu-semana' }, orden.map(i => {
+      const m = MENU[i];
+      return el('div', { class: 'dia-menu' + (i === hoy ? ' hoy' : '') },
+        el('h3', {}, m.dia, i === hoy && el('span', { class: 'etiqueta-hoy' }, 'hoy')),
+        m.libre
+          ? el('p', { class: 'suave' }, NOTA_DOMINGO)
+          : [el('p', { class: 'momento' }, 'Comida'), botonReceta(m.comida), el('p', { class: 'momento' }, 'Cena'), botonReceta(m.cena)],
+      );
+    })),
+  );
+}
+// En «Hoy»: lo que toca comer hoy, para apuntarlo con un toque.
+function bloqueHoyToca(d) {
+  const m = MENU[new Date().getDay()];
+  const ids = [...BASE_DIARIA.slice(0, 2), ...(m.libre ? [] : [m.comida]), BASE_DIARIA[2], ...(m.libre ? [] : [m.cena])];
+  return el('section', { class: 'bloque', 'aria-labelledby': 't-toca' },
+    cabeza('📅', `Hoy toca (${m.dia.toLowerCase()})`, 't-toca', 'prado'),
+    m.libre && el('p', { class: 'suave' }, NOTA_DOMINGO),
+    el('ul', { class: 'lista' }, ids.map(id => {
+      const r = receta(id);
+      const nombre = `${r.nombre} (1 ración)`;
+      const puesto = d.comidas.some(c => c.n === nombre);
+      return el('li', {},
+        el('button', { class: 'enlace texto', type: 'button', onclick: () => abrirReceta(r) }, el('span', { class: 'tipo-mini' }, r.tipo), r.nombre),
+        puesto
+          ? el('span', { class: 'series' }, '✓')
+          : el('button', { class: 'boton claro mini', type: 'button', 'aria-label': `Apuntar ${r.nombre}`, onclick: () => {
+              d.comidas.push({ n: nombre, k: r.kcal, p: r.prot }); guardar(); pintar();
+            } }, `+ ${r.kcal}`),
+      );
+    })),
+    el('p', { class: 'suave' }, 'Toca «+» cuando te lo comas y se suma solo. Las cifras son kcal.'),
+  );
+}
 function tonoReceta(r) {
   if (r.emoji === '🐟') return 'mar';
-  if (/Desayuno|Merienda|Postre/.test(r.tipo)) return 'sidra';
+  if (/Desayuno|Media|Merienda|Postre/.test(r.tipo)) return 'sidra';
   if (r.emoji === '🥩' || r.emoji === '🍗') return 'manzana';
   return 'prado';
 }
